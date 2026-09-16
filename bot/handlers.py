@@ -389,9 +389,9 @@ def register_handlers(application: Application) -> None:
     application.add_handler(CommandHandler("about", about))
     application.add_handler(CommandHandler("ping", ping))
 
-        application.add_handler(
+    application.add_handler(
         ChatJoinRequestHandler(welcome_join_request)
-        )
+    )
     application.add_handler(
         CallbackQueryHandler(
             dynamic_command_button,
