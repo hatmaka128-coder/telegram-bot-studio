@@ -236,12 +236,12 @@ Stay in character as Disha while being truthful about your capabilities.
             "content": item["content"]
         })
 
-    payload = {
+        payload = {
         "model": "openrouter/free",
         "messages": messages
     }
 
-         await message.reply_chat_action("typing")
+    await message.reply_chat_action("typing")
 
     def call_openrouter():
         request = urllib.request.Request(
