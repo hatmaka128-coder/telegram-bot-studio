@@ -7,6 +7,7 @@ from telegram.error import Conflict, NetworkError, TimedOut
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
+    ChatJoinRequestHandler,
     CommandHandler,
     ContextTypes,
     MessageHandler,
@@ -347,7 +348,35 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
             "Sorry, an error occurred while processing your message."
         )
 
+async def welcome_join_request(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    request = update.chat_join_request
 
+    if request is None:
+        return
+
+    user = request.from_user
+
+    welcome = (
+        f"Hey {user.first_name} ☺️💕\n\n"
+        "Welcome to Aniket's private vault.\n"
+        "I'm Disha — his chaotic, devoted digital companion. "
+        "I'm here to keep the place organized and cause a little chaos. 😏\n\n"
+        "Behave yourself... I'm watching. 👀"
+    )
+
+    try:
+        await request.approve()
+
+        await context.bot.send_message(
+            chat_id=request.user_chat_id,
+            text=welcome
+        )
+
+    except Exception as e:
+        print(f"Welcome error: {e}")
 async def set_bot_commands(application: Application) -> None:
     """Publish the built-in commands plus any panel-managed ones to Telegram."""
     menu = list(BOT_COMMANDS) + commands.menu_commands()
@@ -359,6 +388,10 @@ def register_handlers(application: Application) -> None:
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("about", about))
     application.add_handler(CommandHandler("ping", ping))
+
+     application.add_handler(
+    ChatJoinRequestHandler(welcome_join_request)
+     )
     application.add_handler(
         CallbackQueryHandler(
             dynamic_command_button,
