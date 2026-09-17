@@ -299,7 +299,7 @@ Stay in character as Disha while being truthful about your capabilities.
         with urllib.request.urlopen(request, timeout=60) as response:
             return json.loads(response.read().decode("utf-8"))
 
-     try:
+        try:
         data = await asyncio.to_thread(call_openrouter)
         reply = data["choices"][0]["message"]["content"]
 
@@ -317,7 +317,7 @@ Stay in character as Disha while being truthful about your capabilities.
 
     context.user_data["chat_history"] = history[-12:]
 
-    await message.reply_text(reply)
+    await message.reply_text(reply) 
 
 async def users_command(
     update: Update,
