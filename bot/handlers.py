@@ -299,9 +299,8 @@ Stay in character as Disha while being truthful about your capabilities.
         with urllib.request.urlopen(request, timeout=60) as response:
             return json.loads(response.read().decode("utf-8"))
 
-  try:
-    async def keep_typing():
-        while True:
+         async def keep_typing():
+           while True:
             await context.bot.send_chat_action(
                 chat_id=update.effective_chat.id,
                 action="typing"
@@ -313,11 +312,7 @@ Stay in character as Disha while being truthful about your capabilities.
     try:
         data = await asyncio.to_thread(call_openrouter)
     finally:
-        typing_task.cancel()
-        try:
-            await typing_task
-        except asyncio.CancelledError:
-            pass      
+        typing_task.cancel()    
 
         reply = data["choices"][0]["message"]["content"]
 
