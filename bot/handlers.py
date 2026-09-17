@@ -299,7 +299,7 @@ Stay in character as Disha while being truthful about your capabilities.
         with urllib.request.urlopen(request, timeout=60) as response:
             return json.loads(response.read().decode("utf-8"))
 
-                try:
+     try:
         data = await asyncio.to_thread(call_openrouter)
         reply = data["choices"][0]["message"]["content"]
 
