@@ -311,14 +311,12 @@ Stay in character as Disha while being truthful about your capabilities.
         "content": reply
     })
 
-    except Exception as e:
-        print(f"OpenRouter error: {e}")
-        reply = "MY BRAIN JUST EXPLODED 😭 Give me a second and try again."
+    data = await asyncio.to_thread(call_openrouter)
 
-    history.append({
-        "role": "assistant",
-        "content": reply
-    })
+    reply = data["choices"][0]["message"]["content"]
+
+    if not reply:
+        reply = "UHHH 😭 my brain went blank."
 
     context.user_data["chat_history"] = history[-12:]
 
