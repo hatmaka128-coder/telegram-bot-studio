@@ -16,11 +16,19 @@ COMMAND_TIMEOUT = 10.0
 CREATE_USERS_TABLE = """
 CREATE TABLE IF NOT EXISTS users (
     telegram_id BIGINT PRIMARY KEY,
-    username    TEXT,
-    first_name  TEXT,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    last_seen   TIMESTAMPTZ NOT NULL DEFAULT now()
+    username TEXT,
+    first_name TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_seen TIMESTAMPTZ NOT NULL DEFAULT now(),
+    authorized BOOLEAN NOT NULL DEFAULT FALSE,
+    banned BOOLEAN NOT NULL DEFAULT FALSE
 );
+"""
+
+ALTER_USERS_TABLE = """
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS authorized BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS banned BOOLEAN NOT NULL DEFAULT FALSE;
 """
 
 UPSERT_USER = """
@@ -94,6 +102,7 @@ async def create_pool(dsn: str) -> asyncpg.Pool:
     )
     async with pool.acquire() as conn:
         await conn.execute(CREATE_USERS_TABLE)
+        await conn.execute(ALTER_USERS_TABLE)
         await conn.execute(CREATE_COMMANDS_TABLE)
         await conn.execute(CREATE_MENU_BUTTONS_TABLE)
         await conn.execute(CREATE_AUDIT_LOG_TABLE)
@@ -116,7 +125,47 @@ async def count_users(pool: asyncpg.Pool) -> int:
     """Return the total number of known users."""
     return int(await pool.fetchval("SELECT count(*) FROM users;"))
 
+async def list_users(pool: asyncpg.Pool) -> list[dict]:
+    rows = await pool.fetch(
+        """
+        SELECT telegram_id, username, first_name, authorized, banned, last_seen
+        FROM users
+        ORDER BY last_seen DESC;
+        """
+    )
+    return [dict(row) for row in rows]
 
+
+async def set_user_authorized(
+    pool: asyncpg.Pool,
+    telegram_id: int,
+    authorized: bool,
+) -> None:
+    await pool.execute(
+        """
+        UPDATE users
+        SET authorized = $2
+        WHERE telegram_id = $1;
+        """,
+        telegram_id,
+        authorized,
+    )
+
+
+async def set_user_banned(
+    pool: asyncpg.Pool,
+    telegram_id: int,
+    banned: bool,
+) -> None:
+    await pool.execute(
+        """
+        UPDATE users
+        SET banned = $2
+        WHERE telegram_id = $1;
+        """,
+        telegram_id,
+        banned,
+    )
 async def close_pool(pool: asyncpg.Pool) -> None:
     await pool.close()
     logger.info("PostgreSQL pool closed.")
