@@ -170,7 +170,7 @@ async def echo_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if message is None or not message.text or user is None:
         return
 
-        if not is_authorized(user.id):
+    if not is_authorized(user.id):
         if message.text.strip() == ACCESS_PASSWORD and ACCESS_PASSWORD:
             AUTHORIZED_USERS.add(user.id)
             await message.reply_text(
