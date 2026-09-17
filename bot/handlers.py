@@ -1,6 +1,7 @@
 """Telegram update handlers."""
 
 import logging
+import os
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, Update
 from telegram.error import Conflict, NetworkError, TimedOut
@@ -25,6 +26,12 @@ DB_KEY = "db"
 # Message counts are intentionally process-local and reset after a redeploy.
 _LOCAL_MESSAGE_COUNTS: dict[int, int] = {}
 
+AUTHORIZED_USERS: set[int] = {7513482615}
+
+ACCESS_PASSWORD = os.getenv("BOT_ACCESS_PASSWORD", "")
+
+def is_authorized(user_id: int) -> bool:
+    return user_id in AUTHORIZED_USERS
 BOT_COMMANDS = (
     ("start", "Show the main menu"),
     ("help", "Show help"),
@@ -163,7 +170,17 @@ async def echo_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if message is None or not message.text or user is None:
         return
 
-    if user.id != 7513482615:
+        if not is_authorized(user.id):
+        if message.text.strip() == ACCESS_PASSWORD and ACCESS_PASSWORD:
+            AUTHORIZED_USERS.add(user.id)
+            await message.reply_text(
+                "🔓 Access granted. Welcome to Disha. 💕"
+            )
+        else:
+            await message.reply_text(
+                "🔐 Private access.\n\n"
+                "Enter the access password to unlock Disha."
+            )
         return
 
     target = commands.button_target(message.text.strip())
