@@ -210,6 +210,11 @@ async def echo_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     import urllib.request
     import asyncio
 
+    await context.bot.send_chat_action(
+    chat_id=update.effective_chat.id,
+    action="typing"
+    )
+    
     api_key = os.getenv("OPENROUTER_API_KEY")
 
     if not api_key:
@@ -295,7 +300,24 @@ Stay in character as Disha while being truthful about your capabilities.
             return json.loads(response.read().decode("utf-8"))
 
     try:
+    async def keep_typing():
+        while True:
+            await context.bot.send_chat_action(
+                chat_id=update.effective_chat.id,
+                action="typing"
+            )
+            await asyncio.sleep(4)
+
+    typing_task = asyncio.create_task(keep_typing())
+
+    try:
         data = await asyncio.to_thread(call_openrouter)
+    finally:
+        typing_task.cancel()
+        try:
+            await typing_task
+        except asyncio.CancelledError:
+            pass
 
         reply = data["choices"][0]["message"]["content"]
 
