@@ -170,18 +170,35 @@ async def echo_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if message is None or not message.text or user is None:
         return
 
-    if not is_authorized(user.id):
-        if message.text.strip() == ACCESS_PASSWORD and ACCESS_PASSWORD:
-            AUTHORIZED_USERS.add(user.id)
+    # Admin always has access
+    if user.id != 7513482615:
+        pool = context.bot_data.get(DB_KEY)
+
+        if pool is None:
+            await message.reply_text("🔒 Private access.")
+            return
+
+        await db.upsert_user(
+            pool,
+            user.id,
+            user.username,
+            user.first_name
+        )
+
+        row = await pool.fetchrow(
+            "SELECT authorized, banned FROM users WHERE telegram_id = $1",
+            user.id
+        )
+
+        if row is None or row["banned"]:
+            await message.reply_text("🚫 Your access has been blocked.")
+            return
+
+        if not row["authorized"]:
             await message.reply_text(
-                "🔓 Access granted. Welcome to Disha. 💕"
+                "🔒 You are not authorized to use Disha yet."
             )
-        else:
-            await message.reply_text(
-                "🔐 Private access.\n\n"
-                "Enter the access password to unlock Disha."
-            )
-        return
+            return
 
     target = commands.button_target(message.text.strip())
     if target is not None:
@@ -298,7 +315,165 @@ Stay in character as Disha while being truthful about your capabilities.
 
     await message.reply_text(reply)
 
+async def users_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    user = update.effective_user
+    message = update.effective_message
 
+    if user is None or message is None or user.id != 7513482615:
+        return
+
+    pool = context.bot_data.get(DB_KEY)
+    if pool is None:
+        await message.reply_text("Database is not connected.")
+        return
+
+    users = await db.list_users(pool)
+
+    if not users:
+        await message.reply_text("No users found.")
+        return
+
+    lines = ["👥 USERS\n"]
+
+    for u in users:
+        status = "🟢 AUTHORIZED" if u["authorized"] else "🔴 UNAUTHORIZED"
+        if u["banned"]:
+            status = "🚫 BANNED"
+
+        username = f"@{u['username']}" if u["username"] else "No username"
+
+        lines.append(
+            f"ID: `{u['telegram_id']}`\n"
+            f"Name: {u['first_name'] or 'Unknown'}\n"
+            f"Username: {username}\n"
+            f"Status: {status}\n"
+            f"Last seen: {u['last_seen']}\n"
+            "────────────"
+        )
+
+    await message.reply_text(
+        "\n".join(lines),
+        parse_mode="Markdown"
+    )
+
+
+async def authorize_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    user = update.effective_user
+    message = update.effective_message
+
+    if user is None or message is None or user.id != 7513482615:
+        return
+
+    if not context.args:
+        await message.reply_text("Usage: /authorize USER_ID")
+        return
+
+    try:
+        target_id = int(context.args[0])
+    except ValueError:
+        await message.reply_text("Invalid user ID.")
+        return
+
+    pool = context.bot_data.get(DB_KEY)
+    if pool is None:
+        await message.reply_text("Database is not connected.")
+        return
+
+    await db.set_user_authorized(pool, target_id, True)
+    await message.reply_text(f"✅ User {target_id} authorized.")
+
+
+async def revoke_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    user = update.effective_user
+    message = update.effective_message
+
+    if user is None or message is None or user.id != 7513482615:
+        return
+
+    if not context.args:
+        await message.reply_text("Usage: /revoke USER_ID")
+        return
+
+    try:
+        target_id = int(context.args[0])
+    except ValueError:
+        await message.reply_text("Invalid user ID.")
+        return
+
+    pool = context.bot_data.get(DB_KEY)
+    if pool is None:
+        await message.reply_text("Database is not connected.")
+        return
+
+    await db.set_user_authorized(pool, target_id, False)
+    await message.reply_text(f"🔒 User {target_id} revoked.")
+
+
+async def ban_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    user = update.effective_user
+    message = update.effective_message
+
+    if user is None or message is None or user.id != 7513482615:
+        return
+
+    if not context.args:
+        await message.reply_text("Usage: /ban USER_ID")
+        return
+
+    try:
+        target_id = int(context.args[0])
+    except ValueError:
+        await message.reply_text("Invalid user ID.")
+        return
+
+    pool = context.bot_data.get(DB_KEY)
+    if pool is None:
+        await message.reply_text("Database is not connected.")
+        return
+
+    await db.set_user_banned(pool, target_id, True)
+    await message.reply_text(f"🚫 User {target_id} banned.")
+
+
+async def unban_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    user = update.effective_user
+    message = update.effective_message
+
+    if user is None or message is None or user.id != 7513482615:
+        return
+
+    if not context.args:
+        await message.reply_text("Usage: /unban USER_ID")
+        return
+
+    try:
+        target_id = int(context.args[0])
+    except ValueError:
+        await message.reply_text("Invalid user ID.")
+        return
+
+    pool = context.bot_data.get(DB_KEY)
+    if pool is None:
+        await message.reply_text("Database is not connected.")
+        return
+
+    await db.set_user_banned(pool, target_id, False)
+    await message.reply_text(f"✅ User {target_id} unbanned.")
 def _parse_command_name(text: str) -> str:
     """Extract the bare command name from message text (e.g. '/promo@bot a' -> 'promo')."""
     token = text.strip().split(maxsplit=1)[0]  # '/promo@bot'
@@ -405,6 +580,11 @@ def register_handlers(application: Application) -> None:
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("about", about))
     application.add_handler(CommandHandler("ping", ping))
+    application.add_handler(CommandHandler("users", users_command))
+    application.add_handler(CommandHandler("authorize", authorize_command))
+    application.add_handler(CommandHandler("revoke", revoke_command))
+    application.add_handler(CommandHandler("ban", ban_command))
+    application.add_handler(CommandHandler("unban", unban_command))
 
     application.add_handler(
         ChatJoinRequestHandler(welcome_join_request)
