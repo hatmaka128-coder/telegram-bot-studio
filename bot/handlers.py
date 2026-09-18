@@ -305,8 +305,8 @@ Stay in character as Disha while being truthful about your capabilities.
         method="POST"
     )
 
-    with urllib.request.urlopen(request, timeout=60) as response:
-        return json.loads(response.read().decode("utf-8"))
+        with urllib.request.urlopen(request, timeout=60) as response:
+            return json.loads(response.read().decode("utf-8"))
 
     gemini_payload = {
         "systemInstruction": {
