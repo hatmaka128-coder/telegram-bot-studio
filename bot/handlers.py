@@ -633,12 +633,60 @@ async def set_bot_commands(application: Application) -> None:
     menu = list(BOT_COMMANDS) + commands.menu_commands()
     await application.bot.set_my_commands(menu)
 
+async def gemini_test(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user = update.effective_user
+    message = update.effective_message
 
+    if user is None or message is None or user.id != 7513482615:
+        return
+
+    import json
+    import urllib.request
+    import os
+
+    api_key = os.getenv("GEMINI_API_KEY")
+
+    if not api_key:
+        await message.reply_text("❌ GEMINI_API_KEY is missing.")
+        return
+
+    payload = {
+        "contents": [
+            {
+                "role": "user",
+                "parts": [{"text": "Reply with exactly: Gemini is working!"}]
+            }
+        ]
+    }
+
+    request = urllib.request.Request(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "x-goog-api-key": api_key,
+            "Content-Type": "application/json",
+        },
+        method="POST"
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            data = json.loads(response.read().decode("utf-8"))
+
+        reply = data["candidates"][0]["content"]["parts"][0]["text"]
+        await message.reply_text(f"✅ Gemini works!\n\n{reply}")
+
+    except Exception as e:
+        await message.reply_text(
+            f"❌ Gemini test failed:\n\n{type(e).__name__}: {e}"
+        )
+        
 def register_handlers(application: Application) -> None:
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("about", about))
     application.add_handler(CommandHandler("ping", ping))
+    application.add_handler(CommandHandler("geminitest", gemini_test))
     application.add_handler(CommandHandler("users", users_command))
     application.add_handler(CommandHandler("authorize", authorize_command))
     application.add_handler(CommandHandler("revoke", revoke_command))
