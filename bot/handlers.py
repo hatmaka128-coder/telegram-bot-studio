@@ -310,60 +310,62 @@ def call_openrouter():
     with urllib.request.urlopen(request, timeout=60) as response:
         return json.loads(response.read().decode("utf-8"))
 
-gemini_payload = {
-    "systemInstruction": {
-        "parts": [{"text": system_prompt}]
-    },
-    "contents": [
-        {
-            "role": "user" if item["role"] == "user" else "model",
-            "parts": [{"text": item["content"]}]
-        }
-        for item in history
-    ]
-}
-
-def call_gemini():
-    request = urllib.request.Request(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
-        data=json.dumps(gemini_payload).encode("utf-8"),
-        headers={
-            "x-goog-api-key": gemini_api_key,
-            "Content-Type": "application/json",
+    gemini_payload = {
+        "systemInstruction": {
+            "parts": [{"text": system_prompt}]
         },
-        method="POST"
-    )
+        "contents": [
+            {
+                "role": "user" if item["role"] == "user" else "model",
+                "parts": [{"text": item["content"]}]
+            }
+            for item in history
+        ]
+    }
 
-    with urllib.request.urlopen(request, timeout=60) as response:
-        return json.loads(response.read().decode("utf-8"))
+    def call_gemini():
+        request = urllib.request.Request(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+            data=json.dumps(gemini_payload).encode("utf-8"),
+            headers={
+                "x-goog-api-key": gemini_api_key,
+                "Content-Type": "application/json",
+            },
+            method="POST"
+        )
 
-try:
-    if use_openrouter:
-        try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            return json.loads(response.read().decode("utf-8"))
+
+    try:
+        if use_openrouter:
             data = await asyncio.to_thread(call_openrouter)
             reply = data["choices"][0]["message"]["content"]
-        except Exception as openrouter_error:
-            print(f"OpenRouter failed: {openrouter_error}")
-            print("Trying Gemini fallback...")
+
+        else:
             data = await asyncio.to_thread(call_gemini)
             reply = data["candidates"][0]["content"]["parts"][0]["text"]
 
-    else:
+    except Exception as first_error:
+        print(f"Primary AI provider failed: {first_error}")
+
         try:
-            data = await asyncio.to_thread(call_gemini)
-            reply = data["candidates"][0]["content"]["parts"][0]["text"]
-        except Exception as gemini_error:
-            print(f"Gemini failed: {gemini_error}")
-            print("Trying OpenRouter fallback...")
-            data = await asyncio.to_thread(call_openrouter)
-            reply = data["choices"][0]["message"]["content"]
+            if use_openrouter:
+                print("Switching to Gemini...")
+                data = await asyncio.to_thread(call_gemini)
+                reply = data["candidates"][0]["content"]["parts"][0]["text"]
+
+            else:
+                print("Switching to OpenRouter...")
+                data = await asyncio.to_thread(call_openrouter)
+                reply = data["choices"][0]["message"]["content"]
+
+        except Exception as second_error:
+            print(f"Backup AI provider failed: {second_error}")
+            reply = "MY AI BRAINS ARE BOTH DYING 😭 Give me a second and try again."
 
     if not reply:
         reply = "UHHH 😭 my brain went blank."
-
-except Exception as e:
-    print(f"AI error: {e}")
-    reply = "MY BRAIN JUST EXPLODED 😭 Give me a second and try again."
 
     history.append({
         "role": "assistant",
