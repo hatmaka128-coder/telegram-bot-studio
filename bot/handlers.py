@@ -177,23 +177,39 @@ async def generate_horde_image(prompt: str):
         print("HORDE_API_KEY is missing")
         return None
 
-    payload = {
-        "prompt": prompt,
-        "params": {
-            "width": 512,
-            "height": 512,
-            "steps": 20,
-            "n": 1
-        }
-    }
+    # Disha's reference face is stored in the repository root.
+    face_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)),
+        "disha_face.jpg"
+    )
 
-    headers = {
-        "apikey": api_key,
-        "Content-Type": "application/json",
-        "Client-Agent": "DishaTelegramBot:1.0"
-    }
+    if not os.path.exists(face_path):
+        print(f"Disha face not found: {face_path}")
+        return None
 
     try:
+        with open(face_path, "rb") as f:
+            face_data = base64.b64encode(f.read()).decode("utf-8")
+
+        payload = {
+            "prompt": prompt,
+            "source_image": face_data,
+            "source_processing": "img2img",
+            "params": {
+                "width": 512,
+                "height": 512,
+                "steps": 20,
+                "n": 1,
+                "denoising_strength": 0.35
+            }
+        }
+
+        headers = {
+            "apikey": api_key,
+            "Content-Type": "application/json",
+            "Client-Agent": "DishaTelegramBot:1.0"
+        }
+
         request = urllib.request.Request(
             "https://stablehorde.net/api/v2/generate/async",
             data=json.dumps(payload).encode("utf-8"),
@@ -205,9 +221,10 @@ async def generate_horde_image(prompt: str):
             data = json.loads(response.read().decode("utf-8"))
 
         job_id = data["id"]
+
         print(f"🎨 AI Horde job: {job_id}")
 
-        # Wait for generation
+        # Check the job while it is waiting.
         for _ in range(60):
             await asyncio.sleep(5)
 
@@ -217,61 +234,61 @@ async def generate_horde_image(prompt: str):
             )
 
             with urllib.request.urlopen(
-                check_request, timeout=30
+                check_request,
+                timeout=30
             ) as response:
                 check = json.loads(response.read().decode("utf-8"))
 
             print(
-                f"🎨 Horde status: "
-                f"done={check.get('done')} "
+                f"🎨 Horde: done={check.get('done')} "
                 f"queue={check.get('queue_position')}"
             )
 
             if check.get("faulted"):
-                print("❌ AI Horde job faulted")
+                print("❌ AI Horde image job faulted")
                 return None
 
             if check.get("done"):
                 break
+
         else:
-            print("❌ AI Horde timed out")
+            print("❌ AI Horde image generation timed out")
             return None
 
-        # Get the actual generated image
+        # Retrieve the actual image.
         status_request = urllib.request.Request(
             f"https://stablehorde.net/api/v2/generate/status/{job_id}",
             headers=headers
         )
 
         with urllib.request.urlopen(
-            status_request, timeout=30
+            status_request,
+            timeout=30
         ) as response:
             status = json.loads(response.read().decode("utf-8"))
 
         generations = status.get("generations", [])
 
         if not generations:
-            print("❌ No image returned by AI Horde")
+            print("❌ AI Horde returned no generations")
             return None
 
         image_data = generations[0].get("img")
 
         if not image_data:
-            print("❌ Image data missing")
+            print("❌ AI Horde returned no image data")
             return None
 
-        # AI Horde may return an image URL or base64 data
         if image_data.startswith("http"):
             image_request = urllib.request.Request(image_data)
 
             with urllib.request.urlopen(
-                image_request, timeout=60
+                image_request,
+                timeout=60
             ) as response:
                 return BytesIO(response.read())
 
-        image_bytes = base64.b64decode(image_data)
-
-        return BytesIO(image_bytes)
+        return BytesIO(base64.b64decode(image_data))
 
     except Exception as e:
         print(f"❌ AI Horde error: {e}")
@@ -336,7 +353,7 @@ async def echo_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if any(word in lower_text for word in image_words):
         prompt = text
 
-        await message.reply_text("🎨 Creating your image...")
+        await message.reply_text("Wait honey I am showing you 🍑👀...")
 
         try:
             image = await generate_horde_image(prompt)
