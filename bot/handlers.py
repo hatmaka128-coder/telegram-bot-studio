@@ -293,7 +293,7 @@ Stay in character as Disha while being truthful about your capabilities.
 }
 
     def call_openrouter():
-    request = urllib.request.Request(
+        request = urllib.request.Request(
         "https://openrouter.ai/api/v1/chat/completions",
         data=json.dumps(payload).encode("utf-8"),
         headers={
