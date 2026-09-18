@@ -276,15 +276,16 @@ Stay in character as Disha while being truthful about your capabilities.
             "role": role,
             "content": item["content"]
         })
-   adult_keywords = {
-    "sex", "sexual", "nude", "naked", "porn", "xxx",
-    "erotic", "horny", "orgasm", "masturbat", "fetish"
-}
 
-use_openrouter = any(
-    word in message.text.lower() 
-    for word in adult_keywords
-)
+        adult_keywords = {
+        "sex", "sexual", "nude", "naked", "porn", "xxx",
+        "erotic", "horny", "orgasm", "masturbat", "fetish"
+    }
+
+    use_openrouter = any(
+        word in message.text.lower()
+        for word in adult_keywords
+    ) 
 
     payload = {
         "model": "openrouter/free",
