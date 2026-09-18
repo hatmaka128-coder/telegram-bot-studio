@@ -314,7 +314,7 @@ Stay in character as Disha while being truthful about your capabilities.
         data = await asyncio.to_thread(call_openrouter)
         reply = data["choices"][0]["message"]["content"]
 
-    else:
+      else:
         gemini_payload = {
             "systemInstruction": {
                 "parts": [{"text": system_prompt}]
@@ -345,10 +345,10 @@ Stay in character as Disha while being truthful about your capabilities.
         data = await asyncio.to_thread(call_gemini)
         reply = data["candidates"][0]["content"]["parts"][0]["text"]
 
-    if not reply:
+        if not reply:
         reply = "UHHH 😭 my brain went blank."
 
-except Exception as e:
+   except Exception as e:
     print(f"AI error: {e}")
     reply = "MY BRAIN JUST EXPLODED 😭 Give me a second and try again."
 
