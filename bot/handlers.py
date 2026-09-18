@@ -348,9 +348,9 @@ Stay in character as Disha while being truthful about your capabilities.
         if not reply:
            reply = "UHHH 😭 my brain went blank."
 
-   except Exception as e:
-    print(f"AI error: {e}")
-    reply = "MY BRAIN JUST EXPLODED 😭 Give me a second and try again."
+    except Exception as e:
+      print(f"AI error: {e}")
+      reply = "MY BRAIN JUST EXPLODED 😭 Give me a second and try again."
 
     history.append({
         "role": "assistant",
