@@ -276,7 +276,7 @@ Stay in character as Disha while being truthful about your capabilities.
             "content": item["content"]
         })
 
-            payload = {
+    payload = {
         "model": "openrouter/free",
         "messages": messages
     }
