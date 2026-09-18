@@ -339,10 +339,12 @@ Stay in character as Disha while being truthful about your capabilities.
         if use_openrouter:
             data = await asyncio.to_thread(call_openrouter)
             reply = data["choices"][0]["message"]["content"]
+            print("🤖 AI provider used: OpenRouter")
 
         else:
             data = await asyncio.to_thread(call_gemini)
             reply = data["candidates"][0]["content"]["parts"][0]["text"]
+            print("🤖 AI provider used: Gemini")
 
     except Exception as first_error:
         print(f"Primary AI provider failed: {first_error}")
