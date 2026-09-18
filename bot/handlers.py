@@ -278,6 +278,7 @@ async def echo_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "create an image",
         "generate an image",
         "make an image",
+        "make a image",
         "create a picture",
         "generate a picture",
         "make a picture",
