@@ -346,7 +346,7 @@ Stay in character as Disha while being truthful about your capabilities.
         reply = data["candidates"][0]["content"]["parts"][0]["text"]
 
         if not reply:
-        reply = "UHHH 😭 my brain went blank."
+           reply = "UHHH 😭 my brain went blank."
 
    except Exception as e:
     print(f"AI error: {e}")
