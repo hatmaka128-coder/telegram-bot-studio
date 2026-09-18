@@ -200,7 +200,7 @@ async def generate_horde_image(prompt: str):
                 "height": 512,
                 "steps": 20,
                 "n": 1,
-                "denoising_strength": 0.35
+                "denoising_strength": 0.70
             }
         }
 
