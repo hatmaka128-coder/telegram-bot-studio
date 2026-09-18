@@ -163,6 +163,76 @@ async def menu_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await ping(update, context)
 
 
+async def generate_horde_image(prompt: str):
+    import os
+    import json
+    import urllib.request
+    import asyncio
+    import base64
+    from io import BytesIO
+
+    api_key = os.getenv("HORDE_API_KEY")
+
+    if not api_key:
+        return None
+
+    payload = {
+        "prompt": prompt,
+        "params": {
+            "width": 768,
+            "height": 768,
+            "steps": 20,
+            "n": 1
+        }
+    }
+
+    request = urllib.request.Request(
+        "https://stablehorde.net/api/v2/generate/async",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "apikey": api_key,
+            "Content-Type": "application/json",
+            "Client-Agent": "DishaTelegramBot:1.0"
+        },
+        method="POST"
+    )
+
+    with urllib.request.urlopen(request, timeout=30) as response:
+        data = json.loads(response.read().decode("utf-8"))
+
+    job_id = data["id"]
+
+    for _ in range(60):
+        await asyncio.sleep(5)
+
+        status_request = urllib.request.Request(
+            f"https://stablehorde.net/api/v2/generate/status/{job_id}",
+            headers={
+                "apikey": api_key,
+                "Client-Agent": "DishaTelegramBot:1.0"
+            }
+        )
+
+        with urllib.request.urlopen(status_request, timeout=30) as response:
+            status = json.loads(response.read().decode("utf-8"))
+
+        if status.get("done"):
+            generations = status.get("generations", [])
+
+            if not generations:
+                return None
+
+            image_data = generations[0].get("img")
+
+            if not image_data:
+                return None
+
+            image_bytes = base64.b64decode(image_data)
+            return BytesIO(image_bytes)
+
+    return None
+
+
 async def echo_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     message = update.effective_message
     user = update.effective_user
@@ -203,6 +273,39 @@ async def echo_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     target = commands.button_target(message.text.strip())
     if target is not None:
         await menu_button(update, context)
+        return
+    image_words = (
+        "create an image",
+        "generate an image",
+        "make an image",
+        "create a picture",
+        "generate a picture",
+        "make a picture",
+        "draw a picture",
+    )
+
+    text = message.text.strip()
+    lower_text = text.lower()
+
+    if any(word in lower_text for word in image_words):
+        prompt = text
+
+        await message.reply_text("🎨 Creating your image...")
+
+        try:
+            image = await generate_horde_image(prompt)
+
+            if image is None:
+                await message.reply_text("❌ I couldn't generate the image right now.")
+                return
+
+            image.seek(0)
+            await message.reply_photo(photo=image)
+
+        except Exception as e:
+            print(f"Image generation failed: {e}")
+            await message.reply_text("❌ Image generation failed. Try again later.")
+
         return
 
     import os
