@@ -372,7 +372,7 @@ Stay in character as Disha while being truthful about your capabilities.
         "content": reply
     })
 
-    context.user_data["chat_history"] = history[-12:]
+    context.user_data["chat_history"] = history[-6:]
 
     await message.reply_text(reply) 
 
