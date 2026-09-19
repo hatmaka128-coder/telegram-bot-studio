@@ -104,10 +104,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         is_new = await db.upsert_user(pool, user.id, user.username, user.first_name)
 
     name = user.first_name if user.first_name else "friend"
-    greeting = "Welcome" if is_new else "Welcome back"
-    await message.reply_text(
-        f"{greeting}, {name}! The bot is running.\n\n"
-        "Choose a menu button below or type /help to see the available commands.",
+    greeting = (
+    f"Hey {name} 😏💕 Welcome back!\n\n"
+    "Disha is here, honey. Come tell me what's on your mind... 👀\n\n"
+)
+
+await message.reply_text(
+    greeting + "Choose something below or just message me.",
         reply_markup=_main_menu_keyboard(),
     )
     dynamic_keyboard = _dynamic_commands_keyboard()
