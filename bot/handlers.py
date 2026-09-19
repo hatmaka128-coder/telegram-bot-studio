@@ -114,7 +114,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         f"Hey {name} 😏💕 Welcome back!\n\n"
         "Disha is here, honey. Come tell me what's on your mind... 👀\n\n"
         "Choose something below or just message me.",
-        reply_markup=main_menu_keyboard(),
+        reply_markup=_main_menu_keyboard(),
     )
 
     dynamic_keyboard = _dynamic_commands_keyboard()
