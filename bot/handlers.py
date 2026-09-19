@@ -104,19 +104,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         is_new = await db.upsert_user(pool, user.id, user.username, user.first_name)
 
     name = user.first_name if user.first_name else "friend"
-    greeting = (
-    f"Hey {name} 😏💕 Welcome back!\n\n"
-    "Disha is here, honey. Come tell me what's on your mind... 👀\n\n"
-)
 
 await message.reply_text(
-    greeting + "Choose something below or just message me.",
-        reply_markup=_main_menu_keyboard(),
-    )
-    dynamic_keyboard = _dynamic_commands_keyboard()
-    if dynamic_keyboard is not None:
-        await message.reply_text("Choose a command:", reply_markup=dynamic_keyboard)
+    f"Hey {name} 😏💕 Welcome back!\n\n"
+    "Disha is here, honey. Come tell me what's on your mind... 👀\n\n"
+    "Choose something below or just message me.",
+    reply_markup=main_menu_keyboard(),
+)
 
+dynamic_keyboard = _dynamic_commands_keyboard()
+if dynamic_keyboard is not None:
+    await message.reply_text(
+        "Choose a command:",
+        reply_markup=dynamic_keyboard,
+    )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     del context
