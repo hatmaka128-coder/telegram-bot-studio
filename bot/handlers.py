@@ -93,19 +93,24 @@ def _dynamic_commands_keyboard() -> InlineKeyboardMarkup | None:
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     message = update.effective_message
     user = update.effective_user
+
     if message is None or user is None:
         return
 
-    # Persist the user in PostgreSQL when available (insert on first contact,
-    # refresh otherwise). Without a database the bot still greets the user.
     pool = context.bot_data.get(DB_KEY)
     is_new = True
+
     if pool is not None:
-        is_new = await db.upsert_user(pool, user.id, user.username, user.first_name)
+        is_new = await db.upsert_user(
+            pool,
+            user.id,
+            user.username,
+            user.first_name
+        )
 
     name = user.first_name if user.first_name else "friend"
 
-     await message.reply_text(
+    await message.reply_text(
         f"Hey {name} 😏💕 Welcome back!\n\n"
         "Disha is here, honey. Come tell me what's on your mind... 👀\n\n"
         "Choose something below or just message me.",
