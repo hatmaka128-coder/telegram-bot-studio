@@ -869,6 +869,7 @@ def register_handlers(application: Application) -> None:
     application.add_handler(CommandHandler("revoke", revoke_command))
     application.add_handler(CommandHandler("ban", ban_command))
     application.add_handler(CommandHandler("unban", unban_command))
+    application.add_handler(CommandHandler("id", id_command))
 
     application.add_handler(
         ChatJoinRequestHandler(welcome_join_request)
@@ -885,3 +886,14 @@ def register_handlers(application: Application) -> None:
         MessageHandler(filters.Regex(f"^({MENU_HELP}|{MENU_ABOUT}|{MENU_PING})$"), menu_button)
     )
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo_message))
+
+async def id_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    message = update.effective_message
+
+    if message is None or message.chat is None:
+        return
+
+    await message.reply_text(
+        f"Chat ID: `{message.chat.id}`",
+        parse_mode="Markdown"
+    )
