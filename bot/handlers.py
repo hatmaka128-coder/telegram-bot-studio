@@ -961,7 +961,7 @@ async def vault_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         context.user_data["vault_verifying"] = True
         await message.reply_text(
             "🔐 Vault verification\n\n"
-            "Who is your dad?"
+            "GREATEST CLUB IN LONDON"
         )
         return
 
