@@ -42,6 +42,7 @@ BOT_COMMANDS = (
 MENU_HELP = "Help"
 MENU_ABOUT = "About"
 MENU_PING = "Ping"
+MENU_VAULT = "🔐 Private Vault"
 
 HELP_TEXT = """Available commands:
 /start - Start the bot
@@ -53,7 +54,7 @@ DYNAMIC_CALLBACK_PREFIX = "command:"
 
 
 def _main_menu_keyboard() -> ReplyKeyboardMarkup:
-    rows: list[list[str]] = [[MENU_HELP, MENU_ABOUT], [MENU_PING]]
+    rows: list[list[str]] = [[MENU_HELP, MENU_ABOUT], [MENU_PING]], [MENU_VAULT]]
     custom_rows: dict[int, list[str]] = {}
     for button in commands.reply_menu_buttons():
         custom_rows.setdefault(button["row_index"], []).append(button["label"])
@@ -170,6 +171,8 @@ async def menu_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await about(update, context)
     elif text == MENU_PING:
         await ping(update, context)
+    elif text == MENU_VAULT:
+        await vault_button(update, context)
 
 
 async def generate_horde_image(prompt: str):
@@ -309,6 +312,9 @@ async def echo_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     user = update.effective_user
 
     if message is None or not message.text or user is None:
+        return
+    if context.user_data.get("vault_verifying"):
+        await vault_answer(update, context)
         return
 
     # Admin always has access
@@ -786,25 +792,72 @@ async def welcome_join_request(
         return
 
     user = request.from_user
+    pool = context.bot_data.get(DB_KEY)
 
-    welcome = (
-        f"Hey {user.first_name} ☺️💕\n\n"
-        "Welcome to Aniket's private vault.\n"
-        "I'm Disha — his chaotic, devoted digital companion. "
-        "I'm here to keep the place organized and cause a little chaos. 😏\n\n"
-        "Behave yourself... I'm watching. 👀"
+    # Your account is always allowed
+    if user.id == 7513482615:
+        await request.approve()
+        return
+
+    if pool is None:
+        await request.decline()
+        return
+
+    await db.upsert_user(
+        pool,
+        user.id,
+        user.username,
+        user.first_name
     )
 
-    try:
-        await request.approve()
+    row = await pool.fetchrow(
+        """
+        SELECT authorized, banned
+        FROM users
+        WHERE telegram_id = $1
+        """,
+        user.id,
+    )
 
+    # Only authorized users can join
+    if row is None or not row["authorized"] or row["banned"]:
+        await request.decline()
+
+        try:
+            await context.bot.send_message(
+                chat_id=request.user_chat_id,
+                text=(
+                    "🔒 Your Private Vault access isn't authorized.\n\n"
+                    "Ask Aniket to authorize you first."
+                ),
+            )
+        except Exception:
+            pass
+
+        return
+
+    await request.approve()
+
+# Revoke the invite link that was just used
+try:
+    if request.invite_link is not None:
+        await context.bot.revoke_chat_invite_link(
+            chat_id=request.chat.id,
+            invite_link=request.invite_link.invite_link,
+        )
+except Exception as e:
+    print(f"Invite link revoke failed: {e}")
+
+try:
         await context.bot.send_message(
             chat_id=request.user_chat_id,
-            text=welcome
+            text=(
+                f"Welcome {user.first_name} 💕\n\n"
+                "You're now inside Aniket's private vault. 🔐"
+            ),
         )
-
-    except Exception as e:
-        print(f"Welcome error: {e}")
+    except Exception:
+        pass
 async def set_bot_commands(application: Application) -> None:
     """Publish the built-in commands plus any panel-managed ones to Telegram."""
     menu = list(BOT_COMMANDS) + commands.menu_commands()
@@ -897,3 +950,109 @@ async def id_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         f"Chat ID: `{message.chat.id}`",
         parse_mode="Markdown"
     )
+
+async def vault_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    message = update.effective_message
+    user = update.effective_user
+
+    if message is None or user is None:
+        return
+
+    # Admin always has vault access
+    if user.id == 7513482615:
+        context.user_data["vault_verifying"] = True
+        await message.reply_text(
+            "🔐 Vault verification\n\n"
+            "Who is your dad?"
+        )
+        return
+
+    pool = context.bot_data.get(DB_KEY)
+
+    if pool is None:
+        await message.reply_text("🔒 Vault is temporarily unavailable.")
+        return
+
+    row = await pool.fetchrow(
+        """
+        SELECT authorized, banned
+        FROM users
+        WHERE telegram_id = $1
+        """,
+        user.id,
+    )
+
+    if row is None or not row["authorized"] or row["banned"]:
+        await message.reply_text(
+            "🔒 Private Vault\n\n"
+            "You don't have access to the vault yet."
+        )
+        return
+
+    context.user_data["vault_verifying"] = True
+
+    question = os.getenv(
+        "VAULT_SECURITY_QUESTION",
+        "Who is your dad?"
+    )
+
+    await message.reply_text(
+        f"🔐 One security check first...\n\n"
+        f"{question}"
+    )
+
+async def vault_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    message = update.effective_message
+    user = update.effective_user
+
+    if message is None or user is None or not message.text:
+        return
+
+    if not context.user_data.get("vault_verifying"):
+        return
+
+    answer = message.text.strip()
+    correct_answer = os.getenv("VAULT_SECRET_ANSWER", "").strip()
+
+    if not correct_answer:
+        await message.reply_text(
+            "🔒 Vault verification is not configured correctly."
+        )
+        return
+
+    if answer.casefold() != correct_answer.casefold():
+        await message.reply_text(
+            "❌ Wrong answer.\n\n"
+            "I can't give you the vault link."
+        )
+        return
+
+    context.user_data["vault_verifying"] = False
+
+    vault_chat_id = os.getenv("VAULT_CHAT_ID")
+
+    if not vault_chat_id:
+        await message.reply_text(
+            "🔒 Vault channel is not configured."
+        )
+        return
+
+    try:
+        invite = await context.bot.create_chat_invite_link(
+            chat_id=int(vault_chat_id),
+            name=f"Vault access - {user.id}",
+            creates_join_request=True,
+        )
+
+        await message.reply_text(
+            "✅ Verification passed!\n\n"
+            "🔐 Here's your private vault access link:\n"
+            f"{invite.invite_link}\n\n"
+            "This link is intended only for you."
+        )
+
+    except Exception as e:
+        print(f"Vault invite creation failed: {e}")
+        await message.reply_text(
+            "❌ I couldn't create your vault link right now."
+        )
