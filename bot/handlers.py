@@ -54,7 +54,7 @@ DYNAMIC_CALLBACK_PREFIX = "command:"
 
 
 def _main_menu_keyboard() -> ReplyKeyboardMarkup:
-    rows: list[list[str]] = [[MENU_HELP, MENU_ABOUT], [MENU_PING]], [MENU_VAULT]]
+    rows: list[list[str]] = [[MENU_HELP, MENU_ABOUT, MENU_PING], [MENU_VAULT]]
     custom_rows: dict[int, list[str]] = {}
     for button in commands.reply_menu_buttons():
         custom_rows.setdefault(button["row_index"], []).append(button["label"])
