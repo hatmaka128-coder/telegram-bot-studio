@@ -838,15 +838,15 @@ async def welcome_join_request(
 
     await request.approve()
 
-# Revoke the invite link that was just used
-try:
-    if request.invite_link is not None:
-        await context.bot.revoke_chat_invite_link(
-            chat_id=request.chat.id,
-            invite_link=request.invite_link.invite_link,
-        )
-except Exception as e:
-    print(f"Invite link revoke failed: {e}")
+        # Revoke the invite link that was just used
+    try:
+        if request.invite_link is not None:
+            await context.bot.revoke_chat_invite_link(
+                chat_id=request.chat.id,
+                invite_link=request.invite_link.invite_link,
+            )
+    except Exception as e:
+        print(f"Invite link revoke failed: {e}")
 
     try:
         await context.bot.send_message(
