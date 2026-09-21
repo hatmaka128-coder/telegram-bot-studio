@@ -999,7 +999,10 @@ async def vault_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         f"{question}"
     )
 
-async def vault_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def vault_answer(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> None:
     message = update.effective_message
     user = update.effective_user
 
@@ -1010,22 +1013,26 @@ async def vault_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
 
     answer = message.text.strip()
-    correct_answer = os.getenv("VAULT_SECRET_ANSWER", "").strip()
+    correct_answer = os.getenv(
+        "VAULT_SECRET_ANSWER",
+        ""
+    ).strip()
 
     if not correct_answer:
+        context.user_data["vault_verifying"] = False
         await message.reply_text(
-            "🔒 Vault verification is not configured correctly."
+            "🔐 Vault verification is not configured correctly."
         )
         return
 
     if answer.casefold() != correct_answer.casefold():
-         context.user_data["vault_verifying"] = False
+        context.user_data["vault_verifying"] = False
 
-         await message.reply_text(
-        "❌ Wrong answer.\n\n"
-        "I can't give you the vault link."
-    )
-    return
+        await message.reply_text(
+            "❌ Wrong answer.\n\n"
+            "I can't give you the vault link."
+        )
+        return
 
     context.user_data["vault_verifying"] = False
 
@@ -1033,32 +1040,36 @@ async def vault_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     if not vault_chat_id:
         await message.reply_text(
-            "🔒 Vault channel is not configured."
+            "🔐 Vault channel is not configured."
         )
         return
 
     try:
         print("🔐 VAULT: attempting to create invite link")
 
-    invite = await context.bot.create_chat_invite_link(
-        chat_id=int(vault_chat_id),
-        name=f"Vault access - {user.id}",
-        creates_join_request=True,
-    )
+        invite = await context.bot.create_chat_invite_link(
+            chat_id=int(vault_chat_id),
+            name=f"Vault access - {user.id}",
+            creates_join_request=True,
+        )
 
-    print("✅ VAULT: invite link created successfully")
+        print("✅ VAULT: invite link created successfully")
 
-    await message.reply_text(
-        "✅ Verification passed!\n\n"
-        "🔐 Here's your private vault access link:\n"
-        f"{invite.invite_link}\n\n"
-        "This link is intended only for you."
-    )
+        await message.reply_text(
+            "✅ Verification passed!\n\n"
+            "🔐 Here's your private vault access link:\n"
+            f"{invite.invite_link}\n\n"
+            "This link is intended only for you."
+        )
 
-except Exception as e:
-    print(f"❌ VAULT ERROR: {type(e).__name__}: {e}")
-    logger.exception("Vault invite creation failed")
+    except Exception as e:
+        print(
+            f"❌ VAULT ERROR: {type(e).__name__}: {e}"
+        )
+        logger.exception(
+            "Vault invite creation failed"
+        )
 
-    await message.reply_text(
-        "❌ I couldn't create your vault link right now."
-    )
+        await message.reply_text(
+            "❌ I couldn't create your vault link right now."
+        )
