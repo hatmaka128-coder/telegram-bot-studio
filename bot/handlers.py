@@ -848,7 +848,7 @@ try:
 except Exception as e:
     print(f"Invite link revoke failed: {e}")
 
-try:
+    try:
         await context.bot.send_message(
             chat_id=request.user_chat_id,
             text=(
