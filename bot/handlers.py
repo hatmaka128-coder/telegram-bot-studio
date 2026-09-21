@@ -1019,11 +1019,13 @@ async def vault_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
 
     if answer.casefold() != correct_answer.casefold():
-        await message.reply_text(
-            "❌ Wrong answer.\n\n"
-            "I can't give you the vault link."
-        )
-        return
+    context.user_data["vault_verifying"] = False
+
+    await message.reply_text(
+        "❌ Wrong answer.\n\n"
+        "I can't give you the vault link."
+    )
+    return
 
     context.user_data["vault_verifying"] = False
 
