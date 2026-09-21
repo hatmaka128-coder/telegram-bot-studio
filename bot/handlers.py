@@ -935,9 +935,7 @@ def register_handlers(application: Application) -> None:
     )
     # Any other /command is resolved dynamically from the panel-managed registry.
     application.add_handler(MessageHandler(filters.COMMAND, dynamic_command_dispatcher))
-    application.add_handler(
-        MessageHandler(filters.Regex(f"^({MENU_HELP}|{MENU_ABOUT}|{MENU_PING})$"), menu_button)
-    )
+    application.add_handler(MessageHandler(filters.Regex(f"^({MENU_HELP}|{MENU_ABOUT}|{MENU_PING}|{MENU_VAULT})$"), menu_button))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo_message))
 
 async def id_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
