@@ -1121,15 +1121,9 @@ async def announce_command(
         )
         return
 
-    if message.chat.type not in ("group", "supergroup"):
-        await message.reply_text(
-            "Use /announce in the supergroup."
-        )
-        return
-
     try:
         await context.bot.send_message(
-            chat_id=message.chat.id,
+            chat_id=-1004359681631,
             message_thread_id=1,
             text=f"📢 ANNOUNCEMENT\n\n{announcement}"
         )
