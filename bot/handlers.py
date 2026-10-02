@@ -948,6 +948,7 @@ def register_handlers(application: Application) -> None:
     application.add_handler(CommandHandler("ban", ban_command))
     application.add_handler(CommandHandler("unban", unban_command))
     application.add_handler(CommandHandler("id", id_command))
+    application.add_handler(CommandHandler("announce", announce_command))
 
     application.add_handler(
         ChatJoinRequestHandler(welcome_join_request)
@@ -1098,3 +1099,42 @@ async def vault_answer(
         await message.reply_text(
             "❌ I couldn't create your vault link right now."
         )
+
+ async def announce_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    message = update.effective_message
+    user = update.effective_user
+
+    if message is None or user is None:
+        return
+
+    if user.id != 7513482615:
+        return
+
+    announcement = message.text.partition(" ")[2].strip()
+
+    if not announcement:
+        await message.reply_text(
+            "📢 Usage:\n/announce Your message"
+        )
+        return
+
+    if message.chat.type not in ("group", "supergroup"):
+        await message.reply_text(
+            "Use /announce in the supergroup."
+        )
+        return
+
+    try:
+        await context.bot.send_message(
+            chat_id=message.chat.id,
+            message_thread_id=1,
+            text=f"📢 ANNOUNCEMENT\n\n{announcement}"
+        )
+
+        await message.delete()
+
+    except Exception as e:
+        print(f"❌ Announcement failed: {e}")
