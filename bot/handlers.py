@@ -327,6 +327,15 @@ async def echo_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             print(f"❌ Could not delete off-topic member message: {e}")
         return
 
+    # Do not let Disha reply in General
+    if (
+        message is not None
+        and message.chat is not None
+        and message.chat.type in ("group", "supergroup")
+        and message.message_thread_id == 1
+    ):
+        return
+
     if message is None or not message.text or user is None:
         return
     if context.user_data.get("vault_verifying"):
