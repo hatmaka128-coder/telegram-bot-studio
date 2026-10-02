@@ -1124,7 +1124,6 @@ async def announce_command(
     try:
         await context.bot.send_message(
             chat_id=-1004359681631,
-            message_thread_id=1,
             text=f"📢 ANNOUNCEMENT\n\n{announcement}"
         )
 
