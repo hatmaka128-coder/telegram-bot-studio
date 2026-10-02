@@ -329,15 +329,12 @@ async def echo_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     # Do not let Disha reply in General
     if (
-    message is not None
-    and message.chat is not None
-    and message.chat.type in ("group", "supergroup")
-    and (
-        message.message_thread_id is None
-        or message.message_thread_id == 1
-    )
+        message is not None
+        and message.chat is not None
+        and message.chat.type in ("group", "supergroup")
+        and message.message_thread_id is None
     ):
-    return
+        return
 
     if message is None or not message.text or user is None:
         return
