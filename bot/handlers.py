@@ -1103,7 +1103,7 @@ async def vault_answer(
  async def announce_command(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
-) -> None:
+ ) -> None:
     message = update.effective_message
     user = update.effective_user
 
