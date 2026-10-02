@@ -1100,10 +1100,10 @@ async def vault_answer(
             "❌ I couldn't create your vault link right now."
         )
 
- async def announce_command(
+async def announce_command(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
- ) -> None:
+) -> None:
     message = update.effective_message
     user = update.effective_user
 
