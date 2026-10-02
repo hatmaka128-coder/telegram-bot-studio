@@ -311,6 +311,22 @@ async def echo_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     message = update.effective_message
     user = update.effective_user
 
+    # Delete member messages posted outside General
+    if (
+        message is not None
+        and user is not None
+        and message.chat is not None
+        and message.chat.type in ("group", "supergroup")
+        and message.message_thread_id is not None
+        and message.message_thread_id != 1
+        and user.id != 7513482615
+    ):
+        try:
+            await message.delete()
+        except Exception as e:
+            print(f"❌ Could not delete off-topic member message: {e}")
+        return
+
     if message is None or not message.text or user is None:
         return
     if context.user_data.get("vault_verifying"):
